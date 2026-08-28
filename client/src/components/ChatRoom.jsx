@@ -11,7 +11,7 @@ const ChatRoom = ({ socket, roomCode, onLeave }) => {
   const [isConnected, setIsConnected] = useState(false);
   const myPeerId = useRef(socket?.id);
 
-  // STUN/TURN configuration - SAME for both initiator and receiver
+  // STUN/TURN configuration
   const peerConfig = {
     iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
@@ -60,9 +60,6 @@ const ChatRoom = ({ socket, roomCode, onLeave }) => {
     };
   }, [socket, roomCode]);
 
-  // ============================================
-  // ✅ FIX 1: initiatePeerConnection with peerConfig
-  // ============================================
   const initiatePeerConnection = (userId) => {
     if (peerConnections[userId]) return;
     if (userId === myPeerId.current) return;
@@ -70,7 +67,7 @@ const ChatRoom = ({ socket, roomCode, onLeave }) => {
     const peer = new Peer({
       initiator: true,
       trickle: true,
-      config: peerConfig  // ✅ Using the shared config
+      config: peerConfig
     });
 
     setupPeerEvents(peer, userId);
@@ -85,9 +82,6 @@ const ChatRoom = ({ socket, roomCode, onLeave }) => {
     });
   };
 
-  // ============================================
-  // ✅ FIX 2: handleSignal with peerConfig
-  // ============================================
   const handleSignal = (from, signal) => {
     let peer = peerConnections[from];
     
@@ -95,7 +89,7 @@ const ChatRoom = ({ socket, roomCode, onLeave }) => {
       peer = new Peer({
         initiator: false,
         trickle: true,
-        config: peerConfig  // ✅ Using the SAME shared config
+        config: peerConfig
       });
 
       setupPeerEvents(peer, from);
@@ -245,7 +239,3 @@ const ChatRoom = ({ socket, roomCode, onLeave }) => {
 };
 
 export default ChatRoom;
-
-  setupPeerEvents(peer, userId);
-  // ... rest of the code
-};
