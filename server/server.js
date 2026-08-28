@@ -8,6 +8,19 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// ============================================
+// ✅ HEALTH CHECK ROUTE (ADDED HERE)
+// ============================================
+app.get('/', (req, res) => {
+  res.json({ 
+    status: '🟢 GhostNet Signaling Server is LIVE!',
+    message: 'This is the backend for GhostNet messenger. WebSocket connections are active.',
+    rooms: rooms?.size || 0,
+    connections: io?.sockets?.sockets?.size || 0
+  });
+});
+// ============================================
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -84,6 +97,43 @@ io.on('connection', (socket) => {
       // Delete room if empty
       if (room.participants.length === 0) {
         rooms.delete(roomCode);
+        console.log(`🗑️ Room deleted: ${roomCode}`);
+      }
+    }
+  });
+
+  // Disconnect
+  socket.on('disconnect', () => {
+    console.log(`🔴 User disconnected: ${socket.id}`);
+    
+    // Clean up rooms
+    for (const [roomCode, room] of rooms.entries()) {
+      if (room.participants.includes(socket.id)) {
+        room.participants = room.participants.filter(id => id !== socket.id);
+        socket.to(roomCode).emit('user-left', { userId: socket.id });
+        
+        if (room.participants.length === 0) {
+          rooms.delete(roomCode);
+          console.log(`🗑️ Room cleaned up: ${roomCode}`);
+        }
+      }
+    }
+  });
+});
+
+// Additional health check endpoint (optional)
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: '🟢 Running', 
+    rooms: rooms.size,
+    connections: io.sockets.sockets.size 
+  });
+});
+
+const PORT = process.env.PORT || 8081;
+server.listen(PORT, () => {
+  console.log(`🚀 Signaling server running on http://localhost:${PORT}`);
+});
         console.log(`🗑️ Room deleted: ${roomCode}`);
       }
     }
